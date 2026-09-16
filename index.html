@@ -1,0 +1,2917 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+
+<meta charset="UTF-8">
+
+<meta name="viewport"
+content="width=device-width,
+initial-scale=1.0,
+maximum-scale=1.0,
+user-scalable=no,
+viewport-fit=cover">
+
+<title>POS Demo</title>
+
+<link rel="manifest" href="manifest.json">
+
+<meta name="theme-color" content="#ffffff">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+
+<style>
+
+/* =====================================================
+   GENERAL
+===================================================== */
+
+* {
+    box-sizing: border-box;
+    -webkit-tap-highlight-color: transparent;
+}
+
+html,
+body {
+
+    margin: 0;
+    padding: 0;
+
+    width: 100%;
+    height: 100%;
+
+    background: #dfe5e8;
+
+    font-family:
+        Arial,
+        Helvetica,
+        sans-serif;
+
+    overflow: hidden;
+}
+
+
+/* =====================================================
+   POS
+===================================================== */
+
+.pos {
+
+    width: 360px;
+    height: 640px;
+
+    background: white;
+
+    margin: auto;
+
+    position: relative;
+
+    overflow: hidden;
+
+    box-shadow:
+        0 2px 15px
+        rgba(0,0,0,.22);
+
+    transform-origin: center center;
+}
+
+
+/* =====================================================
+   ADAPTACIÓN AUTOMÁTICA
+   MANTIENE PROPORCIÓN 360 × 640
+===================================================== */
+
+@media (max-width: 430px), (max-height: 760px) {
+
+    body {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .pos {
+
+        width: min(100vw, calc(100vh * .5625));
+        height: min(100vh, calc(100vw * 1.7777778));
+
+        max-width: 360px;
+        max-height: 640px;
+
+        box-shadow: none;
+    }
+}
+
+
+/* =====================================================
+   CUANDO SE INSTALA COMO APP
+===================================================== */
+
+@media (display-mode: standalone) {
+
+    body {
+        background: white;
+    }
+
+    .pos {
+
+        width: min(100vw, calc(100dvh * .5625));
+        height: min(100dvh, calc(100vw * 1.7777778));
+
+        max-width: 360px;
+        max-height: 640px;
+
+        box-shadow: none;
+    }
+}
+
+
+/* =====================================================
+   BARRA SUPERIOR
+===================================================== */
+
+.status-bar {
+
+    width: 100%;
+    height: 30px;
+
+    display: flex;
+
+    align-items: center;
+
+    padding: 0 10px;
+
+    background: white;
+
+    color: #68737a;
+
+    font-size: 12px;
+
+    position: relative;
+
+    z-index: 100;
+}
+
+
+.hora {
+
+    margin-right: auto;
+}
+
+
+/* =====================================================
+   SEÑAL
+===================================================== */
+
+.signal {
+
+    display: flex;
+
+    align-items: flex-end;
+
+    gap: 2px;
+
+    height: 13px;
+
+    margin-right: 8px;
+}
+
+
+.signal span {
+
+    width: 3px;
+
+    background: #68737a;
+
+    border-radius: 1px;
+}
+
+
+.signal span:nth-child(1) {
+    height: 4px;
+}
+
+.signal span:nth-child(2) {
+    height: 7px;
+}
+
+.signal span:nth-child(3) {
+    height: 10px;
+}
+
+.signal span:nth-child(4) {
+    height: 13px;
+}
+
+
+/* =====================================================
+   WIFI
+===================================================== */
+
+.wifi {
+
+    width: 18px;
+    height: 15px;
+
+    position: relative;
+
+    margin-right: 8px;
+}
+
+
+.wifi::before {
+
+    content: "";
+
+    position: absolute;
+
+    width: 17px;
+    height: 17px;
+
+    border-top:
+        2px solid #68737a;
+
+    border-radius: 50%;
+
+    top: 0;
+}
+
+
+.wifi::after {
+
+    content: "";
+
+    position: absolute;
+
+    width: 4px;
+    height: 4px;
+
+    background: #68737a;
+
+    border-radius: 50%;
+
+    bottom: 0;
+    left: 7px;
+}
+
+
+/* =====================================================
+   BATERÍA
+===================================================== */
+
+.bateria {
+
+    width: 21px;
+    height: 11px;
+
+    border:
+        1.5px solid #68737a;
+
+    border-radius: 2px;
+
+    padding: 2px;
+
+    position: relative;
+}
+
+
+.bateria::after {
+
+    content: "";
+
+    position: absolute;
+
+    width: 2px;
+    height: 5px;
+
+    background: #68737a;
+
+    right: -4px;
+    top: 2px;
+}
+
+
+.bateria-nivel {
+
+    width: 80%;
+    height: 100%;
+
+    background: #68737a;
+
+    border-radius: 1px;
+}
+
+
+/* =====================================================
+   PANTALLAS
+===================================================== */
+
+.pantalla {
+
+    position: absolute;
+
+    left: 0;
+    top: 30px;
+
+    width: 100%;
+    height: 610px;
+
+    display: none;
+
+    flex-direction: column;
+}
+
+
+.pantalla.activa {
+
+    display: flex;
+}
+
+
+/* =====================================================
+   FONDO AZUL POS
+===================================================== */
+
+.fondo-pos {
+
+    background:
+        #eaf6fc;
+}
+
+
+/* =====================================================
+   PANTALLA 1
+===================================================== */
+
+#pantalla1 {
+
+    background: white;
+}
+
+
+/* ENCABEZADO */
+
+.encabezado {
+
+    text-align: center;
+
+    padding-top: 12px;
+}
+
+
+.importe {
+
+    color: #858e93;
+
+    font-size: 14px;
+}
+
+
+.total {
+
+    color: #707a80;
+
+    font-size: 40px;
+
+    font-weight: 300;
+
+    line-height: 45px;
+}
+
+
+.concepto {
+
+    color: #299bd6;
+
+    font-size: 13px;
+
+    font-weight: 600;
+
+    margin-top: 4px;
+
+    margin-bottom: 9px;
+}
+
+
+/* =====================================================
+   TECLADO
+===================================================== */
+
+.teclado {
+
+    width:
+        calc(100% - 32px);
+
+    height: 300px;
+
+    margin:
+        0 16px;
+
+    display: grid;
+
+    grid-template-columns:
+        repeat(3,1fr);
+
+    grid-template-rows:
+        repeat(4,1fr);
+
+    overflow: hidden;
+
+    border-radius: 4px;
+
+    box-shadow:
+        0 1px 5px
+        rgba(0,0,0,.10);
+}
+
+
+.tecla {
+
+    border:
+        1px solid #e0e7eb;
+
+    background:
+        #f7fafc;
+
+    color:
+        #4f5b62;
+
+    font-size:
+        21px;
+
+    cursor:
+        pointer;
+
+    transition:
+        transform .07s,
+        background .07s;
+}
+
+
+.tecla:active {
+
+    transform:
+        scale(.92)
+        translateY(2px);
+
+    background:
+        #d9edf8;
+}
+
+
+.mas {
+
+    color:
+        #1689c8;
+
+    font-size:
+        30px;
+}
+
+
+/* =====================================================
+   COBRAR
+===================================================== */
+
+.cobrar {
+
+    width:
+        calc(100% - 40px);
+
+    height:
+        46px;
+
+    margin:
+        14px 20px
+        18px;
+
+    border:
+        none;
+
+    border-radius:
+        4px;
+
+    background:
+        #dceaf1;
+
+    color:
+        #8da0aa;
+
+    font-size:
+        14px;
+
+    font-weight:
+        600;
+}
+
+
+.cobrar.activo {
+
+    background:
+        #299bd6;
+
+    color:
+        white;
+
+    cursor:
+        pointer;
+}
+
+
+.cobrar:active {
+
+    transform:
+        scale(.96);
+}
+
+
+/* =====================================================
+   CABECERA DE PANTALLAS
+===================================================== */
+
+.header {
+
+    height:
+        48px;
+
+    display:
+        flex;
+
+    align-items:
+        center;
+
+    padding-left:
+        9px;
+}
+
+
+.volver {
+
+    width:
+        38px;
+
+    height:
+        38px;
+
+    border:
+        none;
+
+    background:
+        transparent;
+
+    font-size:
+        29px;
+
+    color:
+        #6d7a81;
+
+    cursor:
+        pointer;
+}
+
+
+.volver:active {
+
+    transform:
+        scale(.78);
+}
+
+
+/* =====================================================
+   TOTAL
+===================================================== */
+
+.resumen {
+
+    display:
+        flex;
+
+    justify-content:
+        space-between;
+
+    align-items:
+        center;
+
+    padding:
+        3px 24px 0 32px;
+}
+
+
+.resumen-label {
+
+    font-size:
+        12px;
+
+    font-weight:
+        600;
+
+    color:
+        #34434b;
+}
+
+
+.resumen-monto {
+
+    font-size:
+        12px;
+
+    font-weight:
+        600;
+
+    color:
+        #34434b;
+}
+
+
+/* =====================================================
+   PANTALLA 2
+===================================================== */
+
+#pantalla2 {
+
+    background:
+        #eaf6fc;
+}
+
+
+.titulo-pago {
+
+    padding:
+        13px 16px 10px;
+
+    font-size:
+        15px;
+
+    font-weight:
+        600;
+
+    color:
+        #24343d;
+}
+
+
+.opciones {
+
+    display:
+        grid;
+
+    grid-template-columns:
+        1fr 1fr;
+
+    gap:
+        6px;
+
+    padding:
+        0 16px;
+}
+
+
+.opcion {
+
+    height:
+        108px;
+
+    background:
+        #f1f9fd;
+
+    border:
+        1px solid #d9e7ee;
+
+    border-radius:
+        5px;
+
+    box-shadow:
+        0 2px 5px
+        rgba(0,0,0,.10);
+
+    display:
+        flex;
+
+    flex-direction:
+        column;
+
+    align-items:
+        center;
+
+    justify-content:
+        center;
+
+    cursor:
+        pointer;
+
+    transition:
+        transform .08s,
+        background .08s;
+}
+
+
+.opcion:active {
+
+    transform:
+        scale(.94)
+        translateY(3px);
+
+    background:
+        #dceef8;
+}
+
+
+.opcion span {
+
+    font-size:
+        12px;
+
+    font-weight:
+        600;
+
+    color:
+        #4e5b62;
+}
+
+
+/* =====================================================
+   ICONO TARJETA
+===================================================== */
+
+.icono-tarjeta {
+
+    width:
+        23px;
+
+    height:
+        17px;
+
+    border:
+        2px solid #7399bd;
+
+    border-radius:
+        2px;
+
+    margin-bottom:
+        10px;
+
+    position:
+        relative;
+}
+
+
+.icono-tarjeta::before {
+
+    content:
+        "";
+
+    position:
+        absolute;
+
+    left:
+        2px;
+
+    right:
+        2px;
+
+    top:
+        4px;
+
+    height:
+        2px;
+
+    background:
+        #7399bd;
+}
+
+
+/* =====================================================
+   ICONO LINK
+===================================================== */
+
+.icono-link {
+
+    width:
+        21px;
+
+    height:
+        21px;
+
+    border:
+        2px solid #ae8da3;
+
+    border-radius:
+        3px;
+
+    margin-bottom:
+        8px;
+
+    transform:
+        rotate(-10deg);
+}
+
+
+/* =====================================================
+   PANTALLA 3
+   LEYENDO TARJETA
+===================================================== */
+
+#pantalla3 {
+
+    background:
+        #eaf6fc;
+
+    position: absolute;
+}
+
+
+/* =====================================================
+   MENSAJE
+===================================================== */
+
+.mensaje {
+
+    padding:
+        25px 26px 0;
+
+    font-size:
+        14px;
+
+    font-weight:
+        600;
+
+    color:
+        #24343d;
+
+    position: relative;
+
+    z-index: 10;
+}
+
+
+/* =====================================================
+   ÁREA DE LECTURA
+===================================================== */
+
+.area-spinner {
+
+    flex: 1;
+
+    display:
+        flex;
+
+    flex-direction:
+        column;
+
+    align-items:
+        center;
+
+    justify-content:
+        center;
+
+    position:
+        relative;
+}
+
+
+/* =====================================================
+   SPINNER REALISTA
+===================================================== */
+
+.spinner {
+
+    width:
+        52px;
+
+    height:
+        52px;
+
+    border:
+        5px solid
+        #cdebf6;
+
+    border-top:
+        5px solid
+        #299bd6;
+
+    border-right:
+        5px solid
+        #299bd6;
+
+    border-radius:
+        50%;
+
+    animation:
+        girar .8s linear infinite;
+
+    margin-bottom:
+        22px;
+
+    box-shadow:
+        0 0 0 1px
+        rgba(41,155,214,.04);
+
+    position:
+        relative;
+}
+
+
+.spinner::after {
+
+    content:
+        "";
+
+    position:
+        absolute;
+
+    width:
+        8px;
+
+    height:
+        8px;
+
+    background:
+        #299bd6;
+
+    border-radius:
+        50%;
+
+    top:
+        -6px;
+
+    left:
+        50%;
+
+    transform:
+        translateX(-50%);
+}
+
+
+@keyframes girar {
+
+    from {
+        transform:
+            rotate(0deg);
+    }
+
+    to {
+        transform:
+            rotate(360deg);
+    }
+}
+
+
+/* =====================================================
+   TEXTO DEL PROCESO
+===================================================== */
+
+.estado {
+
+    font-size:
+        14px;
+
+    color:
+        #4d6875;
+
+    font-weight:
+        600;
+
+    text-align:
+        center;
+
+    min-height:
+        20px;
+
+    max-width:
+        280px;
+
+    line-height:
+        20px;
+}
+
+
+/* =====================================================
+   ANIMACIÓN TARJETA
+===================================================== */
+
+.tarjeta-animada {
+
+    width:
+        105px;
+
+    height:
+        65px;
+
+    border-radius:
+        8px;
+
+    background:
+        linear-gradient(
+            135deg,
+            #d9e4e9,
+            #ffffff
+        );
+
+    border:
+        1px solid #aebdc4;
+
+    box-shadow:
+        0 6px 14px
+        rgba(0,0,0,.16);
+
+    position:
+        absolute;
+
+    left:
+        50%;
+
+    top:
+        45%;
+
+    transform:
+        translate(-50%,-50%)
+        translateX(170px)
+        rotate(8deg);
+
+    opacity:
+        0;
+
+    z-index:
+        4;
+
+    animation:
+        acercarTarjeta
+        3.2s
+        ease-in-out
+        infinite;
+}
+
+
+.tarjeta-animada::before {
+
+    content:
+        "";
+
+    position:
+        absolute;
+
+    width:
+        28px;
+
+    height:
+        20px;
+
+    left:
+        13px;
+
+    top:
+        17px;
+
+    background:
+        #c5a86b;
+
+    border-radius:
+        3px;
+
+    border:
+        1px solid #a88b4f;
+}
+
+
+.tarjeta-animada::after {
+
+    content:
+        ")))";
+
+    position:
+        absolute;
+
+    right:
+        10px;
+
+    top:
+        20px;
+
+    font-size:
+        16px;
+
+    letter-spacing:
+        -4px;
+
+    color:
+        #299bd6;
+
+    transform:
+        rotate(-90deg);
+}
+
+
+@keyframes acercarTarjeta {
+
+    0% {
+
+        opacity: 0;
+
+        transform:
+            translate(-50%,-50%)
+            translateX(170px)
+            rotate(8deg);
+    }
+
+    20% {
+
+        opacity: 1;
+    }
+
+    65% {
+
+        opacity: 1;
+
+        transform:
+            translate(-50%,-50%)
+            translateX(0)
+            rotate(0deg);
+    }
+
+    80% {
+
+        opacity: 1;
+
+        transform:
+            translate(-50%,-50%)
+            translateX(-8px)
+            rotate(0deg);
+    }
+
+    100% {
+
+        opacity: 0;
+
+        transform:
+            translate(-50%,-50%)
+            translateX(-8px)
+            rotate(0deg);
+    }
+}
+
+
+/* =====================================================
+   ANIMACIÓN NFC
+===================================================== */
+
+.nfc {
+
+    position:
+        absolute;
+
+    left:
+        50%;
+
+    top:
+        45%;
+
+    width:
+        20px;
+
+    height:
+        20px;
+
+    transform:
+        translate(-50%,-50%);
+
+    z-index:
+        6;
+
+    pointer-events:
+        none;
+}
+
+
+.nfc span {
+
+    position:
+        absolute;
+
+    left:
+        50%;
+
+    top:
+        50%;
+
+    width:
+        20px;
+
+    height:
+        20px;
+
+    border:
+        2px solid
+        #299bd6;
+
+    border-radius:
+        50%;
+
+    transform:
+        translate(-50%,-50%)
+        scale(.3);
+
+    opacity:
+        0;
+
+    animation:
+        ondaNfc
+        2.4s
+        ease-out
+        infinite;
+}
+
+
+.nfc span:nth-child(2) {
+
+    animation-delay:
+        .6s;
+}
+
+
+.nfc span:nth-child(3) {
+
+    animation-delay:
+        1.2s;
+}
+
+
+@keyframes ondaNfc {
+
+    0% {
+
+        transform:
+            translate(-50%,-50%)
+            scale(.3);
+
+        opacity:
+            .9;
+    }
+
+    100% {
+
+        transform:
+            translate(-50%,-50%)
+            scale(3.4);
+
+        opacity:
+            0;
+    }
+}
+
+
+/* =====================================================
+   PANTALLA 4
+   CLAVE
+===================================================== */
+
+#pantalla4 {
+
+    background:
+        #eaf6fc;
+}
+
+
+.clave-contenido {
+
+    flex: 1;
+
+    display:
+        flex;
+
+    flex-direction:
+        column;
+
+    align-items:
+        center;
+
+    padding-top:
+        70px;
+}
+
+
+.clave-titulo {
+
+    font-size:
+        18px;
+
+    font-weight:
+        600;
+
+    color:
+        #263940;
+
+    margin-bottom:
+        30px;
+}
+
+
+.pin {
+
+    width:
+        180px;
+
+    height:
+        45px;
+
+    border:
+        1px solid #b8d0db;
+
+    border-radius:
+        4px;
+
+    background:
+        white;
+
+    text-align:
+        center;
+
+    font-size:
+        24px;
+
+    letter-spacing:
+        10px;
+
+    outline:
+        none;
+
+    color:
+        #354c55;
+}
+
+
+.pin:focus {
+
+    border-color:
+        #299bd6;
+
+    box-shadow:
+        0 0 0 2px
+        rgba(41,155,214,.12);
+}
+
+
+/* =====================================================
+   BOTÓN ENTER
+===================================================== */
+
+.enter {
+
+    margin-top:
+        20px;
+
+    width:
+        180px;
+
+    height:
+        45px;
+
+    border:
+        none;
+
+    border-radius:
+        4px;
+
+    background:
+        #299bd6;
+
+    color:
+        white;
+
+    font-size:
+        14px;
+
+    font-weight:
+        600;
+
+    cursor:
+        pointer;
+}
+
+
+.enter:active {
+
+    transform:
+        scale(.95);
+}
+
+
+/* =====================================================
+   PANTALLA 5
+   PROCESANDO
+===================================================== */
+
+#pantalla5 {
+
+    background:
+        #eaf6fc;
+}
+
+
+.procesando {
+
+    flex: 1;
+
+    display:
+        flex;
+
+    flex-direction:
+        column;
+
+    align-items:
+        center;
+
+    justify-content:
+        center;
+}
+
+
+.procesando .spinner {
+
+    width:
+        55px;
+
+    height:
+        55px;
+}
+
+
+.procesando-texto {
+
+    font-size:
+        14px;
+
+    font-weight:
+        600;
+
+    color:
+        #4d6875;
+}
+
+
+/* =====================================================
+   PANTALLA 6
+   ERROR
+===================================================== */
+
+#pantalla6 {
+
+    background:
+        #eaf6fc;
+
+    align-items:
+        center;
+}
+
+
+.error-contenido {
+
+    flex:
+        1;
+
+    width:
+        100%;
+
+    display:
+        flex;
+
+    flex-direction:
+        column;
+
+    align-items:
+        center;
+
+    justify-content:
+        center;
+
+    text-align:
+        center;
+}
+
+
+.error-icono {
+
+    width:
+        58px;
+
+    height:
+        58px;
+
+    border:
+        3px solid #d36c6c;
+
+    border-radius:
+        50%;
+
+    display:
+        flex;
+
+    align-items:
+        center;
+
+    justify-content:
+        center;
+
+    color:
+        #d36c6c;
+
+    font-size:
+        30px;
+
+    margin-bottom:
+        20px;
+}
+
+
+.error-titulo {
+
+    font-size:
+        18px;
+
+    font-weight:
+        600;
+
+    color:
+        #374850;
+
+    margin-bottom:
+        8px;
+}
+
+
+.error-texto {
+
+    font-size:
+        13px;
+
+    color:
+        #718087;
+}
+
+
+/* =====================================================
+   BOTÓN
+===================================================== */
+
+.reintentar {
+
+    width:
+        180px;
+
+    height:
+        44px;
+
+    border:
+        none;
+
+    border-radius:
+        4px;
+
+    background:
+        #299bd6;
+
+    color:
+        white;
+
+    font-size:
+        14px;
+
+    font-weight:
+        600;
+
+    margin-bottom:
+        40px;
+
+    cursor:
+        pointer;
+}
+
+
+.reintentar:active {
+
+    transform:
+        scale(.95);
+}
+
+
+/* =====================================================
+   EFECTO DE SONIDO VISUAL
+===================================================== */
+
+.tecla.sonido {
+
+    animation:
+        pulsarTecla .08s ease;
+}
+
+
+@keyframes pulsarTecla {
+
+    0% {
+        transform:
+            scale(1);
+    }
+
+    50% {
+        transform:
+            scale(.92)
+            translateY(2px);
+    }
+
+    100% {
+        transform:
+            scale(1);
+    }
+}
+
+</style>
+
+</head>
+
+
+<body>
+
+
+<div class="pos" id="pos">
+
+
+<!-- =====================================================
+     BARRA SUPERIOR
+===================================================== -->
+
+<div class="status-bar">
+
+    <span
+        class="hora"
+        id="hora">
+        22:55
+    </span>
+
+
+    <div class="signal">
+
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+
+    </div>
+
+
+    <div class="wifi"></div>
+
+
+    <div class="bateria">
+
+        <div class="bateria-nivel"></div>
+
+    </div>
+
+</div>
+
+
+<!-- =====================================================
+     PANTALLA 1
+===================================================== -->
+
+<div
+    id="pantalla1"
+    class="pantalla activa">
+
+
+    <div class="encabezado">
+
+        <div class="importe">
+            Importe
+        </div>
+
+        <div
+            class="total"
+            id="total">
+            $ 0
+        </div>
+
+        <div class="concepto">
+            Agregar concepto
+        </div>
+
+    </div>
+
+
+    <div class="teclado">
+
+
+        <button
+            class="tecla"
+            onclick="numero('1',this)">
+            1
+        </button>
+
+        <button
+            class="tecla"
+            onclick="numero('2',this)">
+            2
+        </button>
+
+        <button
+            class="tecla"
+            onclick="numero('3',this)">
+            3
+        </button>
+
+
+        <button
+            class="tecla"
+            onclick="numero('4',this)">
+            4
+        </button>
+
+        <button
+            class="tecla"
+            onclick="numero('5',this)">
+            5
+        </button>
+
+        <button
+            class="tecla"
+            onclick="numero('6',this)">
+            6
+        </button>
+
+
+        <button
+            class="tecla"
+            onclick="numero('7',this)">
+            7
+        </button>
+
+        <button
+            class="tecla"
+            onclick="numero('8',this)">
+            8
+        </button>
+
+        <button
+            class="tecla"
+            onclick="numero('9',this)">
+            9
+        </button>
+
+
+        <button
+            class="tecla"
+            onclick="borrar(this)">
+            ⌫
+        </button>
+
+        <button
+            class="tecla"
+            onclick="numero('0',this)">
+            0
+        </button>
+
+        <button
+            class="tecla mas">
+            +
+        </button>
+
+
+    </div>
+
+
+    <button
+        id="btnCobrar"
+        class="cobrar"
+        onclick="irPago()">
+
+        Cobrar
+
+    </button>
+
+
+</div>
+
+
+<!-- =====================================================
+     PANTALLA 2
+     FORMA DE PAGO
+===================================================== -->
+
+<div
+    id="pantalla2"
+    class="pantalla fondo-pos">
+
+
+    <div class="header">
+
+        <button
+            class="volver"
+            onclick="irPrincipal()">
+
+            ←
+
+        </button>
+
+    </div>
+
+
+    <div class="resumen">
+
+        <span class="resumen-label">
+            Total
+        </span>
+
+        <span
+            class="resumen-monto"
+            id="totalPago">
+            $ 0
+        </span>
+
+    </div>
+
+
+    <div class="titulo-pago">
+
+        Elige la forma de pago
+
+    </div>
+
+
+    <div class="opciones">
+
+
+        <div
+            class="opcion"
+            onclick="irTarjeta()">
+
+            <div
+                class="icono-tarjeta">
+            </div>
+
+            <span>
+                Tarjetas
+            </span>
+
+        </div>
+
+
+        <div
+            class="opcion">
+
+            <div
+                class="icono-link">
+            </div>
+
+            <span>
+                Link de pago
+            </span>
+
+        </div>
+
+
+    </div>
+
+
+</div>
+
+
+<!-- =====================================================
+     PANTALLA 3
+     LEYENDO TARJETA
+===================================================== -->
+
+<div
+    id="pantalla3"
+    class="pantalla fondo-pos">
+
+
+    <div class="header">
+
+        <button
+            class="volver"
+            onclick="volverPago()">
+
+            ←
+
+        </button>
+
+    </div>
+
+
+    <div class="resumen">
+
+        <span class="resumen-label">
+            Total
+        </span>
+
+        <span
+            class="resumen-monto"
+            id="totalTarjeta">
+            $ 0
+        </span>
+
+    </div>
+
+
+    <div class="mensaje">
+
+        <span id="mensajeLectura">
+            Leyendo tarjeta...
+        </span>
+
+    </div>
+
+
+    <div class="area-spinner">
+
+
+        <!-- TARJETA ANIMADA -->
+
+        <div class="tarjeta-animada"></div>
+
+
+        <!-- ONDAS NFC -->
+
+        <div class="nfc">
+
+            <span></span>
+            <span></span>
+            <span></span>
+
+        </div>
+
+
+        <!-- SPINNER -->
+
+        <div class="spinner"></div>
+
+
+        <div
+            class="estado"
+            id="estadoLectura">
+
+            Leyendo tarjeta...
+
+        </div>
+
+
+    </div>
+
+
+</div>
+
+
+<!-- =====================================================
+     PANTALLA 4
+     INGRESAR CLAVE
+===================================================== -->
+
+<div
+    id="pantalla4"
+    class="pantalla fondo-pos">
+
+
+    <div class="header">
+
+        <button
+            class="volver"
+            onclick="irTarjeta()">
+
+            ←
+
+        </button>
+
+    </div>
+
+
+    <div class="resumen">
+
+        <span class="resumen-label">
+            Total
+        </span>
+
+        <span
+            class="resumen-monto"
+            id="totalClave">
+            $ 0
+        </span>
+
+    </div>
+
+
+    <div class="clave-contenido">
+
+
+        <div class="clave-titulo">
+
+            Ingresa tu clave
+
+        </div>
+
+
+        <input
+            id="pin"
+            class="pin"
+            type="password"
+            inputmode="numeric"
+            maxlength="4"
+            autocomplete="off"
+            placeholder="••••">
+
+
+        <button
+            class="enter"
+            onclick="procesarClave()">
+
+            ENTER
+
+        </button>
+
+
+    </div>
+
+
+</div>
+
+
+<!-- =====================================================
+     PANTALLA 5
+     PROCESANDO
+===================================================== -->
+
+<div
+    id="pantalla5"
+    class="pantalla fondo-pos">
+
+
+    <div class="header">
+
+    </div>
+
+
+    <div class="resumen">
+
+        <span class="resumen-label">
+            Total
+        </span>
+
+        <span
+            class="resumen-monto"
+            id="totalProcesando">
+            $ 0
+        </span>
+
+    </div>
+
+
+    <div class="procesando">
+
+
+        <div class="spinner"></div>
+
+
+        <div class="procesando-texto">
+
+            Procesando...
+
+        </div>
+
+
+    </div>
+
+
+</div>
+
+
+<!-- =====================================================
+     PANTALLA 6
+     ERROR
+===================================================== -->
+
+<div
+    id="pantalla6"
+    class="pantalla fondo-pos">
+
+
+    <div class="header">
+
+    </div>
+
+
+    <div class="resumen">
+
+        <span class="resumen-label">
+            Total
+        </span>
+
+        <span
+            class="resumen-monto"
+            id="totalError">
+            $ 0
+        </span>
+
+    </div>
+
+
+    <div class="error-contenido">
+
+
+        <div class="error-icono">
+
+            !
+
+        </div>
+
+
+        <div class="error-titulo">
+
+            Error de conexión
+
+        </div>
+
+
+        <div class="error-texto">
+
+            No fue posible completar la operación.
+
+        </div>
+
+
+    </div>
+
+
+    <button
+        class="reintentar"
+        onclick="reiniciar()">
+
+        Reintentar
+
+    </button>
+
+
+</div>
+
+
+</div>
+
+
+<script>
+
+/* =====================================================
+   VARIABLES
+===================================================== */
+
+let valor = "";
+
+let temporizadorLectura = null;
+
+let temporizadorProceso = null;
+
+let audioContext = null;
+
+
+/* =====================================================
+   REFERENCIAS
+===================================================== */
+
+const total =
+    document.getElementById(
+        "total"
+    );
+
+const btnCobrar =
+    document.getElementById(
+        "btnCobrar"
+    );
+
+
+/* =====================================================
+   SONIDO DE TECLA
+===================================================== */
+
+function beep() {
+
+    try {
+
+        if (!audioContext) {
+
+            audioContext =
+                new (
+                    window.AudioContext ||
+                    window.webkitAudioContext
+                )();
+
+        }
+
+        if (
+            audioContext.state ===
+            "suspended"
+        ) {
+
+            audioContext.resume();
+
+        }
+
+        const oscillator =
+            audioContext.createOscillator();
+
+        const gain =
+            audioContext.createGain();
+
+        oscillator.type =
+            "sine";
+
+        oscillator.frequency.value =
+            720;
+
+        gain.gain.setValueAtTime(
+            0.0001,
+            audioContext.currentTime
+        );
+
+        gain.gain.exponentialRampToValueAtTime(
+            0.055,
+            audioContext.currentTime + 0.005
+        );
+
+        gain.gain.exponentialRampToValueAtTime(
+            0.0001,
+            audioContext.currentTime + 0.055
+        );
+
+        oscillator.connect(gain);
+
+        gain.connect(
+            audioContext.destination
+        );
+
+        oscillator.start();
+
+        oscillator.stop(
+            audioContext.currentTime + 0.06
+        );
+
+    } catch(e) {
+
+        /* El sonido es opcional */
+
+    }
+
+}
+
+
+/* =====================================================
+   EFECTO DE TECLA
+===================================================== */
+
+function efectoTecla(elemento) {
+
+    if (!elemento) {
+        return;
+    }
+
+    elemento.classList.remove(
+        "sonido"
+    );
+
+    void elemento.offsetWidth;
+
+    elemento.classList.add(
+        "sonido"
+    );
+
+}
+
+
+/* =====================================================
+   FORMATO
+===================================================== */
+
+function formato(numero) {
+
+    return numero.toLocaleString(
+        "es-CL"
+    );
+
+}
+
+
+/* =====================================================
+   CAMBIAR PANTALLA
+===================================================== */
+
+function mostrarPantalla(numero) {
+
+    document
+        .querySelectorAll(
+            ".pantalla"
+        )
+        .forEach(
+            function(p) {
+
+                p.classList.remove(
+                    "activa"
+                );
+
+            }
+        );
+
+
+    document
+        .getElementById(
+            "pantalla" + numero
+        )
+        .classList.add(
+            "activa"
+        );
+
+}
+
+
+/* =====================================================
+   NÚMEROS
+===================================================== */
+
+function numero(n, elemento) {
+
+    beep();
+
+    efectoTecla(
+        elemento
+    );
+
+
+    if (
+        valor.length >= 9
+    ) {
+
+        return;
+
+    }
+
+
+    valor += n;
+
+
+    actualizar();
+
+}
+
+
+/* =====================================================
+   BORRAR
+===================================================== */
+
+function borrar(elemento) {
+
+    beep();
+
+    efectoTecla(
+        elemento
+    );
+
+
+    valor =
+        valor.slice(
+            0,
+            -1
+        );
+
+
+    actualizar();
+
+}
+
+
+/* =====================================================
+   ACTUALIZAR
+===================================================== */
+
+function actualizar() {
+
+    const monto =
+        parseInt(
+            valor || "0"
+        );
+
+
+    total.textContent =
+        "$ " +
+        formato(monto);
+
+
+    if (
+        monto > 0
+    ) {
+
+        btnCobrar.classList.add(
+            "activo"
+        );
+
+    } else {
+
+        btnCobrar.classList.remove(
+            "activo"
+        );
+
+    }
+
+}
+
+
+/* =====================================================
+   COBRAR
+===================================================== */
+
+function irPago() {
+
+    if (
+        !valor ||
+        parseInt(valor) === 0
+    ) {
+
+        return;
+
+    }
+
+
+    const monto =
+        parseInt(valor);
+
+
+    document.getElementById(
+        "totalPago"
+    ).textContent =
+        "$ " +
+        formato(monto);
+
+
+    mostrarPantalla(2);
+
+}
+
+
+/* =====================================================
+   TARJETAS
+===================================================== */
+
+function irTarjeta() {
+
+    const monto =
+        parseInt(
+            valor || "0"
+        );
+
+
+    document.getElementById(
+        "totalTarjeta"
+    ).textContent =
+        "$ " +
+        formato(monto);
+
+
+    iniciarLectura();
+
+
+    mostrarPantalla(3);
+
+}
+
+
+/* =====================================================
+   LECTURA DE TARJETA
+   DURACIÓN TOTAL: 10 SEGUNDOS
+===================================================== */
+
+function iniciarLectura() {
+
+    clearTimeout(
+        temporizadorLectura
+    );
+
+
+    const estado =
+        document.getElementById(
+            "estadoLectura"
+        );
+
+    const mensaje =
+        document.getElementById(
+            "mensajeLectura"
+        );
+
+
+    /* SEGUNDO 0 */
+
+    estado.textContent =
+        "Leyendo tarjeta...";
+
+    mensaje.textContent =
+        "Leyendo tarjeta...";
+
+
+    /* SEGUNDO 3 */
+
+    setTimeout(
+        function() {
+
+            estado.textContent =
+                "Transmitiendo...";
+
+            mensaje.textContent =
+                "Transmitiendo...";
+
+        },
+        3000
+    );
+
+
+    /* SEGUNDO 6 */
+
+    setTimeout(
+        function() {
+
+            estado.textContent =
+                "No retire su tarjeta del dispositivo...";
+
+            mensaje.textContent =
+                "No retire su tarjeta del dispositivo...";
+
+        },
+        6000
+    );
+
+
+    /* SEGUNDO 10 */
+
+    temporizadorLectura =
+        setTimeout(
+            function() {
+
+                irClave();
+
+            },
+            10000
+        );
+
+}
+
+
+/* =====================================================
+   PANTALLA CLAVE
+===================================================== */
+
+function irClave() {
+
+    const monto =
+        parseInt(
+            valor || "0"
+        );
+
+
+    document.getElementById(
+        "totalClave"
+    ).textContent =
+        "$ " +
+        formato(monto);
+
+
+    document.getElementById(
+        "pin"
+    ).value = "";
+
+
+    mostrarPantalla(4);
+
+
+    /* Enfocar campo */
+
+    setTimeout(
+        function() {
+
+            document.getElementById(
+                "pin"
+            ).focus();
+
+        },
+        150
+    );
+
+}
+
+
+/* =====================================================
+   ENTER
+===================================================== */
+
+function procesarClave() {
+
+    /*
+       DEMO VISUAL:
+
+       El PIN NO se almacena
+       ni se transmite.
+    */
+
+
+    beep();
+
+
+    const monto =
+        parseInt(
+            valor || "0"
+        );
+
+
+    document.getElementById(
+        "totalProcesando"
+    ).textContent =
+        "$ " +
+        formato(monto);
+
+
+    mostrarPantalla(5);
+
+
+    iniciarProcesamiento();
+
+}
+
+
+/* =====================================================
+   PROCESAMIENTO
+   DURACIÓN: 5 SEGUNDOS
+===================================================== */
+
+function iniciarProcesamiento() {
+
+    clearTimeout(
+        temporizadorProceso
+    );
+
+
+    temporizadorProceso =
+        setTimeout(
+            function() {
+
+                mostrarError();
+
+            },
+            5000
+        );
+
+}
+
+
+/* =====================================================
+   ERROR
+===================================================== */
+
+function mostrarError() {
+
+    const monto =
+        parseInt(
+            valor || "0"
+        );
+
+
+    document.getElementById(
+        "totalError"
+    ).textContent =
+        "$ " +
+        formato(monto);
+
+
+    mostrarPantalla(6);
+
+}
+
+
+/* =====================================================
+   VOLVER AL PRINCIPAL
+===================================================== */
+
+function irPrincipal() {
+
+    clearTimeout(
+        temporizadorLectura
+    );
+
+    clearTimeout(
+        temporizadorProceso
+    );
+
+
+    mostrarPantalla(1);
+
+}
+
+
+/* =====================================================
+   VOLVER A PAGO
+===================================================== */
+
+function volverPago() {
+
+    clearTimeout(
+        temporizadorLectura
+    );
+
+
+    mostrarPantalla(2);
+
+}
+
+
+/* =====================================================
+   REINICIAR
+===================================================== */
+
+function reiniciar() {
+
+    clearTimeout(
+        temporizadorLectura
+    );
+
+    clearTimeout(
+        temporizadorProceso
+    );
+
+
+    valor = "";
+
+
+    actualizar();
+
+
+    mostrarPantalla(1);
+
+}
+
+
+/* =====================================================
+   HORA
+===================================================== */
+
+function actualizarHora() {
+
+    const ahora =
+        new Date();
+
+
+    const horas =
+        String(
+            ahora.getHours()
+        ).padStart(
+            2,
+            "0"
+        );
+
+
+    const minutos =
+        String(
+            ahora.getMinutes()
+        ).padStart(
+            2,
+            "0"
+        );
+
+
+    document.getElementById(
+        "hora"
+    ).textContent =
+        horas +
+        ":" +
+        minutos;
+
+}
+
+
+actualizarHora();
+
+
+setInterval(
+    actualizarHora,
+    10000
+);
+
+
+/* =====================================================
+   ANDROID / PANTALLA COMPLETA
+===================================================== */
+
+async function activarModoAndroid() {
+
+    try {
+
+        if (
+            document.documentElement.requestFullscreen &&
+            !document.fullscreenElement
+        ) {
+
+            await document
+                .documentElement
+                .requestFullscreen();
+
+        }
+
+    } catch(e) {
+
+        /* Algunos navegadores no permiten
+           fullscreen automáticamente */
+
+    }
+
+
+    try {
+
+        if (
+            screen.orientation &&
+            screen.orientation.lock
+        ) {
+
+            await screen.orientation.lock(
+                "portrait"
+            );
+
+        }
+
+    } catch(e) {
+
+        /* No todos los navegadores permiten
+           bloquear orientación */
+
+    }
+
+}
+
+
+/* =====================================================
+   ACTIVAR AL PRIMER TOQUE
+===================================================== */
+
+let modoAndroidActivado =
+    false;
+
+
+document.addEventListener(
+    "click",
+    function() {
+
+        if (
+            modoAndroidActivado
+        ) {
+
+            return;
+
+        }
+
+        modoAndroidActivado =
+            true;
+
+        activarModoAndroid();
+
+    },
+    {
+        once: true
+    }
+);
+
+
+/* =====================================================
+   SERVICE WORKER
+===================================================== */
+
+if (
+    "serviceWorker" in navigator
+) {
+
+    window.addEventListener(
+        "load",
+        function() {
+
+            navigator
+                .serviceWorker
+                .register(
+                    "./sw.js"
+                )
+                .catch(
+                    function(error) {
+
+                        console.log(
+                            "Service Worker:",
+                            error
+                        );
+
+                    }
+                );
+
+        }
+    );
+
+}
+
+</script>
+
+
+</body>
+</html>

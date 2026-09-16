@@ -1,0 +1,16 @@
+{
+  "name": "POS Demo",
+  "short_name": "POS",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#eaf6fc",
+  "theme_color": "#eaf6fc",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    }
+  ]
+}
